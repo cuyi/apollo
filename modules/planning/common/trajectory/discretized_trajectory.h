@@ -48,16 +48,13 @@ class DiscretizedTrajectory : public Trajectory {
 
   virtual ~DiscretizedTrajectory() = default;
 
-  common::TrajectoryPoint Evaluate(const double relative_time) const override;
-
   common::TrajectoryPoint StartPoint() const override;
 
   double GetTemporalLength() const override;
 
   double GetSpatialLength() const override;
 
-  virtual common::TrajectoryPoint EvaluateUsingLinearApproximation(
-      const double relative_time) const;
+  common::TrajectoryPoint Evaluate(const double relative_time) const override;
 
   virtual uint32_t QueryNearestPoint(const double relative_time) const;
 

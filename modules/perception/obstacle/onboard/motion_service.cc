@@ -43,6 +43,8 @@ bool MotionService::InitInternal() {
   AINFO << "start to init MotionService.";
   vehicle_planemotion_ = new PlaneMotion(motion_buffer_size_);
 
+  AdapterManager::AddImageFrontCallback(&MotionService::ImageCallback, this);
+
   CHECK(shared_data_manager_ != NULL);
   camera_shared_data_ = dynamic_cast<CameraSharedData*>(
       shared_data_manager_->GetSharedData("CameraSharedData"));
@@ -52,6 +54,10 @@ bool MotionService::InitInternal() {
   }
   AINFO << "init MotionService success.";
   return true;
+}
+void MotionService::ImageCallback(const sensor_msgs::Image &message) {
+    // MutexLock(&image_mutex_);
+    camera_timestamp_ = message.header.stamp.toSec();
 }
 
 void MotionService::OnLocalization(
@@ -98,15 +104,21 @@ void MotionService::OnLocalization(
 
   // add motion to buffer
   double camera_timestamp = camera_shared_data_->GetLatestTimestamp();
+  AINFO << "motion timestamp: " << std::to_string(camera_timestamp);
+  // double camera_timestamp = 0;
+  // {
+  //   MutexLock lock(&image_mutex_);
+  //   camera_timestamp = camera_timestamp_;
+  // }
   if (start_flag_) {
     if (std::abs(camera_timestamp - pre_camera_timestamp_) <
         std::numeric_limits<double>::epsilon()) {
-      AINFO << "Motion_status: accum";
+      ADEBUG << "Motion_status: accum";
       vehicle_planemotion_->add_new_motion(
           &vehicle_status, pre_camera_timestamp_, camera_timestamp,
           PlaneMotion::ACCUM_MOTION);
     } else if (camera_timestamp > pre_camera_timestamp_) {
-      AINFO << "Motion_status: accum_push";
+      ADEBUG << "Motion_status: accum_push";
       vehicle_planemotion_->add_new_motion(
           &vehicle_status, pre_camera_timestamp_, camera_timestamp,
           PlaneMotion::ACCUM_PUSH_MOTION);
